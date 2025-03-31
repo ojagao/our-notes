@@ -45,3 +45,6 @@ wrangler.toml
 
 # Sensitive files
 public/auth.js
+
+## Deploy
+Deploy.md
