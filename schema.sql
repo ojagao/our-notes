@@ -21,3 +21,6 @@ CREATE TABLE IF NOT EXISTS calendar_notes (
   date TIMESTAMP NOT NULL,
   created_at TIMESTAMP NOT NULL
 );
+
+-- 既存のテーブルにpersonカラムを追加（既存のレコードはデフォルト値1を設定）
+ALTER TABLE calendar_notes ADD COLUMN person INTEGER NOT NULL DEFAULT 1;

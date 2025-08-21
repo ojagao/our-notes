@@ -23,6 +23,7 @@ export interface CalendarNote {
   id: string
   text: string
   date: Date
+  person: 1 | 2
   createdAt: Date
 }
 
@@ -43,6 +44,7 @@ interface ApiCalendarNote {
   id: string
   text: string
   date: string
+  person: 1 | 2
   created_at: string
 }
 
@@ -115,7 +117,8 @@ export const useNotesStore = defineStore('notes', () => {
         id: note.id,
         text: note.text,
         date: new Date(note.date),
-        createdAt: new Date(note.created_at)
+        createdAt: new Date(note.created_at),
+        person: note.person
       }))
     } catch (err) {
       console.error('Error fetching calendar notes:', err)
@@ -200,43 +203,38 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
-  async function addCalendarNote(text: string, date: Date) {
+  async function addCalendarNote(text: string, date: Date, person: 1 | 2) {
+    isLoading.value = true;
+    error.value = null;
     try {
-      const dateStr = date.toISOString()
-      
       const response = await fetch(`${API_BASE_URL}/api/calendar-notes`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, date: dateStr })
-      })
+        body: JSON.stringify({ text, date: date.toISOString(), person }),
+      });
 
-      if (!response.ok) throw new Error('Failed to add calendar note')
-      
-      const data = await response.json() as ApiCalendarNote
+      if (!response.ok) throw new Error('Failed to add calendar note');
+
+      const data = await response.json();
       const newNote: CalendarNote = {
         id: data.id,
         text: data.text,
         date: new Date(data.date),
+        person: data.person,
         createdAt: new Date(data.created_at)
       }
       
       calendarNotes.value.push(newNote)
-      saveToLocalStorage() // バックアップとしてローカルにも保存
+      saveToLocalStorage()
+      return newNote
     } catch (err) {
       console.error('Error adding calendar note:', err)
-      error.value = err instanceof Error ? err.message : 'Unknown error'
-      
-      // エラー時はローカルにのみ保存
-      const note: CalendarNote = {
-        id: Date.now().toString(),
-        text,
-        date,
-        createdAt: new Date()
-      }
-      calendarNotes.value.push(note)
-      saveToLocalStorage()
+      error.value = err instanceof Error ? err.message : 'Failed to add calendar note'
+      throw err
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -355,7 +353,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
-  async function updateCalendarNote(id: string, text: string, date: string) {
+  async function updateCalendarNote(id: string, text: string, date: string, person: 1 | 2) {
     isLoading.value = true;
     error.value = null;
     try {
@@ -364,7 +362,7 @@ export const useNotesStore = defineStore('notes', () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, date }),
+        body: JSON.stringify({ text, date, person }),
       });
 
       if (!response.ok) throw new Error('Failed to update calendar note');
@@ -408,6 +406,7 @@ export const useNotesStore = defineStore('notes', () => {
 
   // 初期化時にデータを取得
   onMounted(() => {
+    loadFromLocalStorage()
     fetchShoppingNotes()
     fetchMapNotes()
     fetchCalendarNotes()

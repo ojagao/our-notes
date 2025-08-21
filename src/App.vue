@@ -38,7 +38,7 @@ function handleAddNote(noteData: { text: string, date?: string, page: string }) 
       break
     case 'calendar':
       if (noteData.date) {
-        notesStore.addCalendarNote(noteData.text, new Date(noteData.date))
+        notesStore.addCalendarNote(noteData.text, new Date(noteData.date), 1)
       }
       break
   }

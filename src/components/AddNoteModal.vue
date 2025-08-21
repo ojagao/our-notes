@@ -8,6 +8,7 @@ const props = defineProps<{
     id: string;
     text: string;
     date?: string;
+    person?: number;
   };
 }>();
 
@@ -15,6 +16,11 @@ const emit = defineEmits(["close", "addNote", "updateNote"]);
 
 const noteText = ref("");
 const selectedDate = ref(new Date().toISOString().split("T")[0]);
+const selectedPerson = ref(1);
+const personLabels = {
+  1: import.meta.env.VITE_PERSON_LABEL_1,
+  2: import.meta.env.VITE_PERSON_LABEL_2
+};
 
 // 編集モードかどうかを計算
 const isEditMode = computed(() => !!props.noteToEdit);
@@ -25,6 +31,9 @@ watch(() => props.noteToEdit, (newNote) => {
     noteText.value = newNote.text;
     if (newNote.date) {
       selectedDate.value = newNote.date;
+    }
+    if (newNote.person !== undefined) {
+      selectedPerson.value = newNote.person;
     }
   }
 }, { immediate: true });
@@ -42,6 +51,7 @@ const modalTitle = computed(() => {
 function closeModal() {
   noteText.value = "";
   selectedDate.value = new Date().toISOString().split("T")[0];
+  selectedPerson.value = 1;
   emit("close");
 }
 
@@ -55,7 +65,8 @@ function handleNote() {
         id: props.noteToEdit.id,
         text: noteText.value.trim(),
         page: props.currentPage,
-        date: selectedDate.value
+        date: selectedDate.value,
+        person: selectedPerson.value
       });
     } else {
       emit("updateNote", {
@@ -70,7 +81,8 @@ function handleNote() {
       emit("addNote", {
         text: noteText.value.trim(),
         page: props.currentPage,
-        date: selectedDate.value
+        date: selectedDate.value,
+        person: selectedPerson.value
       });
     } else {
       emit("addNote", {
@@ -82,6 +94,7 @@ function handleNote() {
 
   noteText.value = "";
   selectedDate.value = new Date().toISOString().split("T")[0];
+  selectedPerson.value = 1;
   closeModal();
 }
 </script>
@@ -100,11 +113,17 @@ function handleNote() {
             <v-col cols="12">
               <v-text-field v-model="selectedDate" label="日付" type="date" variant="outlined" density="comfortable" hide-details="auto"></v-text-field>
             </v-col>
+            <v-col cols="12">
+              <v-radio-group v-model="selectedPerson" label="誰の予定？" variant="outlined" density="comfortable">
+                <v-radio :label="personLabels[1]" value="1"></v-radio>
+                <v-radio :label="personLabels[2]" value="2"></v-radio>
+              </v-radio-group>
+            </v-col>
           </v-row>
 
           <v-row>
             <v-col cols="12">
-              <v-text-field v-model="noteText" label="メモ" placeholder="メモを入力してください" variant="outlined" density="comfortable" hide-details="auto" @keyup.enter="handleNote"></v-text-field>
+              <v-text-field v-model="noteText" :label="currentPage === 'calendar' ? '予定' : 'メモ'" :placeholder="currentPage === 'calendar' ? '予定を入力してください' : 'メモを入力してください'" variant="outlined" density="comfortable" hide-details="auto" @keyup.enter="handleNote"></v-text-field>
             </v-col>
           </v-row>
         </v-container>

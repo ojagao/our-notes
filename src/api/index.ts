@@ -19,6 +19,7 @@ interface CalendarNote {
   id: string;
   text: string;
   date: string;
+  person: 1 | 2;
   created_at: string;
 }
 
@@ -210,16 +211,16 @@ app.post("/api/calendar-notes", async (c) => {
   try {
     const body = await c.req.json();
 
-    if (!body.text || !body.date) {
-      return c.json({ error: "Text and date are required" }, 400);
+    if (!body.text || !body.date || !body.person) {
+      return c.json({ error: "Text, date, and person are required" }, 400);
     }
 
     const id = crypto.randomUUID();
     const created_at = new Date().toISOString();
 
-    await c.env.DB.prepare("INSERT INTO calendar_notes (id, text, date, created_at) VALUES (?, ?, ?, ?)").bind(id, body.text, body.date, created_at).run();
+    await c.env.DB.prepare("INSERT INTO calendar_notes (id, text, date, person, created_at) VALUES (?, ?, ?, ?, ?)").bind(id, body.text, body.date, body.person, created_at).run();
 
-    return c.json({ id, text: body.text, date: body.date, created_at }, 201);
+    return c.json({ id, text: body.text, date: body.date, person: body.person, created_at }, 201);
   } catch (error) {
     console.error("Error creating calendar note:", error);
     return c.json({ error: "Failed to create calendar note" }, 500);
@@ -250,17 +251,17 @@ app.put("/api/calendar-notes/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json();
 
-    if (!body.text || !body.date) {
-      return c.json({ error: "Text and date are required" }, 400);
+    if (!body.text || !body.date || !body.person) {
+      return c.json({ error: "Text, date, and person are required" }, 400);
     }
 
-    const { meta } = await c.env.DB.prepare("UPDATE calendar_notes SET text = ?, date = ? WHERE id = ?").bind(body.text, body.date, id).run();
+    const { meta } = await c.env.DB.prepare("UPDATE calendar_notes SET text = ?, date = ?, person = ? WHERE id = ?").bind(body.text, body.date, body.person, id).run();
 
     if (meta.changes === 0) {
       return c.json({ error: "Note not found" }, 404);
     }
 
-    return c.json({ id, text: body.text, date: body.date, success: true });
+    return c.json({ id, text: body.text, date: body.date, person: body.person, success: true });
   } catch (error) {
     console.error("Error updating calendar note:", error);
     return c.json({ error: "Failed to update calendar note" }, 500);
